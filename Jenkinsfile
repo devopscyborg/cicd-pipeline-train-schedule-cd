@@ -8,68 +8,67 @@ pipeline {
                 archiveArtifacts artifacts: 'dist/trainSchedule.zip'
             }
         }
-        stage('DeployToStaging'){
-            when{
+        stage('DeployToStaging') {
+            when {
                 branch 'master'
             }
-            steps{
-                withCredetials([usernamePassword(credentialsId: 'staging_login', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]){
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'staging_login', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
                     sshPublisher(
                         failOnError: true,
                         continueOnError: false,
                         publishers: [
-                        sshPublisherDesc(
-                            configName: 'staging',
-                            sshCredentials: [
-                            username: "$USERNAME",
-                            encryptedPassphrase: "$USERPASS"
-                            ],
-                            transfers: [
-                                sshTransfer(
-                                    sourceFiles: 'dist/trainSchedule.zip',
-                                    removePrefix: 'dist/',
-                                    remoteDirectory: '/temp',
-                                    execCommand: 'sudo /usr/bin/systemctl stop train-schedule && rm -rf /opt/train-schedule/* && unzip /temp/trainSchedule.zip -d /opt/train-schedule && sudo /usr/bin/systemctl start'
-                                   )
-                               ]
-                           )
-                       ]
+                            sshPublisherDesc(
+                                configName: 'staging',
+                                sshCredentials: [
+                                    username: "$USERNAME",
+                                    encryptedPassphrase: "$USERPASS"
+                                ], 
+                                transfers: [
+                                    sshTransfer(
+                                        sourceFiles: 'dist/trainSchedule.zip',
+                                        removePrefix: 'dist/',
+                                        remoteDirectory: '/tmp',
+                                        execCommand: 'sudo /usr/bin/systemctl stop train-schedule && rm -rf /opt/train-schedule/* && unzip /tmp/trainSchedule.zip -d /opt/train-schedule && sudo /usr/bin/systemctl start train-schedule'
+                                    )
+                                ]
+                            )
+                        ]
                     )
                 }
             }
         }
-        stage('DeployToProduction'){
-            when{
+        stage('DeployToProduction') {
+            when {
                 branch 'master'
             }
-            steps{
-                input 'Does the staging enviroment look OK?'
+            steps {
+                input 'Does the staging environment look OK?'
                 milestone(1)
-                withCredetials([usernamePassword(credentialsId: 'staging_login', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]){
+                withCredentials([usernamePassword(credentialsId: 'staging_login', usernameVariable: 'USERNAME', passwordVariable: 'USERPASS')]) {
                     sshPublisher(
                         failOnError: true,
                         continueOnError: false,
                         publishers: [
-                        sshPublisherDesc(
-                            configName: 'staging',
-                            sshCredentials: [
-                            username: "$USERNAME",
-                            encryptedPassphrase: "$USERPASS"
-                            ],
-                            transfers: [
-                                sshTransfer(
-                                    sourceFiles: 'dist/trainSchedule.zip',
-                                    removePrefix: 'dist/',
-                                    remoteDirectory: '/temp',
-                                    execCommand: 'sudo /usr/bin/systemctl stop train-schedule && rm -rf /opt/train-schedule/* && unzip /temp/trainSchedule.zip -d /opt/train-schedule && sudo /usr/bin/systemctl start'
-                                   )
-                               ]
-                           )
-                       ]
+                            sshPublisherDesc(
+                                configName: 'production',
+                                sshCredentials: [
+                                    username: "$USERNAME",
+                                    encryptedPassphrase: "$USERPASS"
+                                ], 
+                                transfers: [
+                                    sshTransfer(
+                                        sourceFiles: 'dist/trainSchedule.zip',
+                                        removePrefix: 'dist/',
+                                        remoteDirectory: '/tmp',
+                                        execCommand: 'sudo /usr/bin/systemctl stop train-schedule && rm -rf /opt/train-schedule/* && unzip /tmp/trainSchedule.zip -d /opt/train-schedule && sudo /usr/bin/systemctl start train-schedule'
+                                    )
+                                ]
+                            )
+                        ]
                     )
                 }
             }
         }
-    
     }
 }
